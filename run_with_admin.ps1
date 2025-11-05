@@ -18,11 +18,34 @@ Write-Host "[+] privilegios elevados, ejecutando SIEM-PROTOTYPE" -ForegroundColo
 $projectPath = Split-Path -Parent $PSCommandPath
 Set-Location $projectPath
 
-
-Write-Host "[*] se activara entorno SIEMENV"
+Write-Host "`n[*] verificando entorno virtual (siemenv)" -ForegroundColor Yellow
 $venvPath = ".\siemenv\Scripts\Activate.ps1"
+$venvFolder = ".\siemenv"
+
+if (-not (Test-Path $venvFolder)) {
+    Write-Host "[!] no existe entorno virtual, este se creara" -ForegroundColor Red
+
+    python -m venv siemenv
+
+    if (-not (Test-Path $venvFolder)) {
+        Write-Host "[X] error: no se logro crear el entorno virtual" -ForegroundColor Red
+        exit
+    }
+}
+
+
+Write-Host "[+] entorno virtual creado" -ForegroundColor Green
+Write-Host "[*] activando entorno virtual..."
+
 & $venvPath
 
 
-Write-Host "[*] Ejecutando SIEM-PROTOTYPE"
+#en caso de que falten las dependencias en este y esten en requirements.txt
+Write-Host "[*] verificando dependencias" -ForegroundColor Yellow
+pip install --upgrade pip > $null
+pip install -r requirements.txt
+
+Write-Host "[+] dependencias OK" -ForegroundColor Green
+
+Write-Host "[*] Ejecutando SIEM-PROTOTYPE" -ForegroundColor Cyan
 python -m src.main

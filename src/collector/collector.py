@@ -3,12 +3,16 @@ import json
 import os
 from .state_manager import CollectorState
 from .event_parser import parse_event
+from src.rules.rule_engine import RuleEngine
+from src.alerts.alert_manager import AlertManager
 
 LOG_SOURCES = ["System", "Security"]
 
 class Collector:
     def __init__(self):
         self.state = CollectorState()
+        self.rule_engine = RuleEngine()
+        self.alert_manager = AlertManager()
 
     def collect_from_log(self, log_type, last_seen_id):
         events = []
@@ -39,7 +43,6 @@ class Collector:
         return events, max_seen
     
 
-    
     def collect_all(self):
         updated_state = {}
 
@@ -58,6 +61,12 @@ class Collector:
                 with open(f"data/{log_type.lower()}_events.jsonl", "a", encoding="utf-8") as f:
                     for e in events:
                         f.write(json.dumps(e) + "\n")
+
+            for e in events:
+                alerts = self.rule_engine.evaluate(e)
+                if alerts:
+                    self.alert_manager.save_alerts(alerts)
+                    print(f"[!] ALERTA generada: {len(alerts)} en evento {e.get('event_id')}")
 
         self.state.save(updated_state)
 

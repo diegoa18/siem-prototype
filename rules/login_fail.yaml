@@ -1,0 +1,11 @@
+name: "Failed Login"
+description: "intento fallido de inicio de sesion detectado"
+severity: "medium"
+
+condition:
+  event_id: 4625
+
+fields:
+  - message
+  - computer
+  - time_generated

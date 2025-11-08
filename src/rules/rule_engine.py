@@ -14,12 +14,21 @@ class RuleEngine:
             cond = rule.get("condition", {})
 
 
-            if "event_id" in cond and event.get("event_id") == cond["event_id"]:
+            if "event_id" in cond and str(event.get("event_id")) == str(cond["event_id"]):
+
+                filtered_event = {
+                    field: event.get(field, None)
+                    for field in rule.get("fields", [])
+                }
+
                 alert = {
-                    "rule": cond["name"],
+                    "rule": rule.get("name"),
                     "description": rule.get("description"),
                     "severity": rule.get("severity", "low"),
-                    "event": event,
+                    "time": event.get("time_generated"),
+                    "event_id": event.get("event_id"),
+                    "computer": event.get("computer"),
+                    "details": filtered_event,
                 }
                 alerts.append(alert)
 

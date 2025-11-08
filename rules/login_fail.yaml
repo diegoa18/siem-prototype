@@ -6,6 +6,10 @@ condition:
   event_id: 4625
 
 fields:
-  - message
-  - computer
   - time_generated
+  - computer
+  - account_name
+  - account_domain
+  - source_ip
+  - source_port
+  - message

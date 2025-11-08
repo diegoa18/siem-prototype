@@ -1,9 +1,20 @@
-name: "Failed Login"
-description: "intento fallido de inicio de sesion detectado"
-severity: "medium"
+id: "R001"
+name: "Multiple failed logins"
+description: "detecta multiples intentos fallidos de inicio de sesion desde la misma IP (fuerza bruta)"
+severity: "high"
+category: "authentication_failure"
+tags:
+  - windows
+  - security
+  - login
+  - brute_force
 
 condition:
   event_id: 4625
+  threshold: 5
+  timeframe_seconds: 120
+  group_by: source_ip
+
 
 fields:
   - time_generated
@@ -12,4 +23,3 @@ fields:
   - account_domain
   - source_ip
   - source_port
-  - message

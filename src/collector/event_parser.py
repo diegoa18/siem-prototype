@@ -1,31 +1,51 @@
-def safe_value(value):
+import importlib
+_logged_extractors = set()
+
+def safe_str(value):
     try:
         return str(value)
-    except:
+    except Exception:
         return None
 
 def parse_event(record):
-    inserts = record.StringInserts if record.StringInserts else []
+    inserts = record.StringInserts or []
+
     parsed = {
-        "event_id": safe_value(record.EventID),
-        "record_number": safe_value(record.RecordNumber),
-        "source": safe_value(record.SourceName),
-        "time_generated": safe_value(record.TimeGenerated),
-        "category": safe_value(record.EventCategory),
-        "computer": safe_value(record.ComputerName),
-        "message": safe_value(inserts),
-        "event_type": safe_value(record.EventType),
-        "event_type_name": safe_value(getattr(record, "EventTypeName", None)),
+        "event_id": safe_str(record.EventID),
+        "record_number": safe_str(record.RecordNumber),
+        "source": safe_str(record.SourceName),
+        "time_generated": safe_str(getattr(record, "TimeGenerated", None)),
+        "category": safe_str(record.EventCategory),
+        "computer": safe_str(record.ComputerName),
+        "message": inserts,
+        "event_type": safe_str(record.EventType),
+        "event_type_name": safe_str(getattr(record, "EventTypeName", None)),
     }
 
-    #INFORMACION EXTRA UTIL PARA EVENTO 4625
-    if record.EventID == 4625:
-        parsed.update({
-            "account_name": inserts[0] if len(inserts) > 0 else None,
-            "account_domain": inserts[1] if len(inserts) > 1 else None,
-            "logon_type": inserts[2] if len(inserts) > 2 else None,
-            "source_ip": inserts[5] if len(inserts) > 5 else None,
-            "source_port": inserts[6] if len(inserts) > 6 else None,
-        })
+    try:
+        event_id = int(record.EventID) & 0xFFFF
+    except Exception:
+        return parsed
+
+    module_name = f"src.collector.extractors.windows_{event_id}"
+
+    try:
+        mod = importlib.import_module(module_name)
+
+        if not hasattr(mod, "extract"):
+            return parsed
+
+        parsed_before = dict(parsed)
+        parsed = mod.extract(record, parsed) or parsed
+
+        if parsed != parsed_before and event_id not in _logged_extractors:
+            added = [k for k in parsed.keys() if k not in parsed_before.keys()]
+            print(f"[debug] extractor windows_{event_id} aplicado. campos añadidos: {added}")
+            _logged_extractors.add(event_id)
+
+    except ModuleNotFoundError:
+        pass
+    except Exception as e:
+        print(f"[debug] extractor {module_name} falló: {e}")
 
     return parsed

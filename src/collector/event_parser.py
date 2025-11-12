@@ -1,4 +1,5 @@
 import importlib
+from src.utils.logger import logger
 _logged_extractors = set()
 
 def safe_str(value):
@@ -40,12 +41,12 @@ def parse_event(record):
 
         if parsed != parsed_before and event_id not in _logged_extractors:
             added = [k for k in parsed.keys() if k not in parsed_before.keys()]
-            print(f"[debug] extractor windows_{event_id} aplicado. campos añadidos: {added}")
+            logger.info(f"[debug] extractor windows_{event_id} aplicado. campos añadidos: {added}")
             _logged_extractors.add(event_id)
 
     except ModuleNotFoundError:
         pass
     except Exception as e:
-        print(f"[debug] extractor {module_name} falló: {e}")
+        logger.error(f"[debug] extractor {module_name} falló: {e}")
 
     return parsed

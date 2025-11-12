@@ -42,8 +42,8 @@ Write-Host "[*] activando entorno virtual..."
 
 #en caso de que falten las dependencias en este y esten en requirements.txt
 Write-Host "[*] verificando dependencias" -ForegroundColor Yellow
-pip install --upgrade pip > $null
-pip install -r requirements.txt
+pip install --upgrade pip > $null --quiet
+pip install -r requirements.txt --quiet
 
 Write-Host "[+] dependencias OK" -ForegroundColor Green
 

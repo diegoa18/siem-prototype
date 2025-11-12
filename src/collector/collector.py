@@ -5,6 +5,7 @@ from .state_manager import CollectorState
 from .event_parser import parse_event
 from src.rules.rule_engine import RuleEngine
 from src.alerts.alert_manager import AlertManager
+from src.utils.logger import logger
 
 LOG_SOURCES = ["System", "Security"]
 
@@ -50,7 +51,7 @@ class Collector:
             last_seen = self.state.get_last_seen(log_type)
             events, max_seen = self.collect_from_log(log_type, last_seen)
 
-            print(f"[+] {len(events)} eventos nuevos desde '{log_type}' (last={last_seen} -> {max_seen})")
+            logger.info(f"[+] {len(events)} eventos nuevos desde '{log_type}' (last={last_seen} -> {max_seen})")
 
             updated_state[log_type] = max_seen
 
@@ -66,7 +67,7 @@ class Collector:
                 alerts = self.rule_engine.evaluate(e)
                 if alerts:
                     self.alert_manager.save_alerts(alerts)
-                    print(f"[!] ALERTA generada: {len(alerts)} en evento {e.get('event_id')}")
+                    logger.warning(f"[!] ALERTA generada: {len(alerts)} en evento {e.get('event_id')}")
 
         self.state.save(updated_state)
 

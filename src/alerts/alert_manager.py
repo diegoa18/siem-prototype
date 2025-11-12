@@ -2,6 +2,7 @@ import json
 import os
 from src.utils.file_utils import ensure_dir
 from src.config import ALERT_FILE, DATA_DIR
+from src.utils.logger import logger
 
 class AlertManager:
     def __init__(self):
@@ -12,6 +13,11 @@ class AlertManager:
 
     
     def save_alerts(self, alerts):
+        if not alerts:
+            logger.debug("no hay alertas para guardar")
+            return
+
+
         with open(self.file, "a", encoding="utf-8") as f:
             for alert in alerts:
 
@@ -21,22 +27,37 @@ class AlertManager:
                 }
 
                 f.write(json.dumps(serializable) + "\n")
+                logger.info(f"Alerta guardada: {alert.get('rule')} - {alert.get('severity').upper()}")
                 self.bonito(alert)
 
 
     def bonito(self, alert):
         event = alert.get("event", {})
-        print("\n" + "="*50)
-        print(f"regla:        {alert.get('rule')}")
-        print(f"descripcion:  {alert.get('description')}")
-        print(f"severidad:    {alert.get('severity').upper()}")
-        print("detalles del evento:")
-        print(f" - equipo:       {event.get('computer', 'N/A')}")
-        print(f" - hora:         {event.get('time_generated', 'N/A')}")
+        rule = alert.get("rule", "N/A")
+        desc = alert.get("description", "N/A")
+        sev = alert.get("severity", "unknown").upper()
 
-        msg = event.get("message")
+        equipo = event.get("computer", "N/A")
+        hora = event.get("time_generated", "N/A")
+        msg = event.get("message", "")
+
+        if msg and len(msg) > 100:
+            msg = msg[:100] + "... (truncado)"
+
+        formatted = (
+            "══════════════════════════════════════════════════════════════════════\n"
+            " [!] ALERTA DETECTADA\n"
+            " ===============================================================\n"
+            f" REGLA:        {rule}\n"
+            f" DESCRIPCIÓN:  {desc}\n"
+            f" SEVERIDAD:    {sev}\n"
+            f" EQUIPO:       {equipo}\n"
+            f" HORA:         {hora}\n"
+        )
+
         if msg:
-            msg_str = str(msg)
-            if len(msg_str) > 120:
-                msg_str = msg_str[:120] + "... (truncado)"
-            print(f" - mensaje: {msg_str}")
+            formatted += f" MENSAJE:      {msg}\n"
+
+        formatted += "══════════════════════════════════════════════════════════════════════"
+
+        logger.warning(formatted)

@@ -1,14 +1,17 @@
 import importlib
+from typing import Dict, Any, Optional
 from src.utils.logger import logger
 _logged_extractors = set()
 
-def safe_str(value):
+#convertir valor a str
+def safe_str(value: Any) -> Optional[str]:
     try:
         return str(value)
     except Exception:
         return None
 
-def parse_event(record):
+#parsear registro de evento a un dict
+def parse_event(record: Any) -> Dict[str, Any]:
     inserts = record.StringInserts or []
 
     parsed = {
@@ -24,6 +27,7 @@ def parse_event(record):
     }
 
     try:
+        #mascara para ID real
         event_id = int(record.EventID) & 0xFFFF
     except Exception:
         return parsed
@@ -41,12 +45,12 @@ def parse_event(record):
 
         if parsed != parsed_before and event_id not in _logged_extractors:
             added = [k for k in parsed.keys() if k not in parsed_before.keys()]
-            logger.info(f"[debug] extractor windows_{event_id} aplicado. campos añadidos: {added}")
+            logger.debug(f"Extractor windows_{event_id} aplicado. Campos añadidos: {added}")
             _logged_extractors.add(event_id)
 
     except ModuleNotFoundError:
         pass
     except Exception as e:
-        logger.error(f"[debug] extractor {module_name} falló: {e}")
+        logger.error(f"Extractor {module_name} falló: {e}")
 
     return parsed

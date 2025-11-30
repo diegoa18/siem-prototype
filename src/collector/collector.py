@@ -1,6 +1,7 @@
 import win32evtlog
 import json
-import os
+from typing import List, Tuple, Dict, Any
+from src.config import get_event_store_path
 from .state_manager import CollectorState
 from .event_parser import parse_event
 from src.rules.rule_engine import RuleEngine
@@ -9,41 +10,49 @@ from src.utils.logger import logger
 
 LOG_SOURCES = ["System", "Security"]
 
-class Collector:
+class Collector: #recoleccion de logs de windows  
     def __init__(self):
         self.state = CollectorState()
         self.rule_engine = RuleEngine()
         self.alert_manager = AlertManager()
-
-    def collect_from_log(self, log_type, last_seen_id):
+        
+    #lee nuevos eventos de distinta fuente desde el ultimo ID visto
+    def collect_from_log(self, log_type: str, last_seen_id: int) -> Tuple[List[Dict[str, Any]], int]:
         events = []
-
+        max_seen = last_seen_id
+        
         flags = win32evtlog.EVENTLOG_BACKWARDS_READ | win32evtlog.EVENTLOG_SEQUENTIAL_READ
-        handle = win32evtlog.OpenEventLog(None, log_type)
+        
+        try:
+            handle = win32evtlog.OpenEventLog(None, log_type)
+        except Exception as e:
+            logger.error(f"Fallo al abrir log de eventos {log_type}: {e}")
+            return [], last_seen_id
 
         read = True
-        max_seen = last_seen_id
-
-
         while read:
-            records = win32evtlog.ReadEventLog(handle, flags, 0)
-            if not records:
-                read = False
-                break
-
-            for record in records:
-                if record.RecordNumber <= last_seen_id:
+            try:
+                records = win32evtlog.ReadEventLog(handle, flags, 0)
+                if not records:
                     read = False
                     break
 
-                parsed = parse_event(record)
-                events.append(parsed)
-                max_seen = max(max_seen, record.RecordNumber)
+                for record in records:
+                    if record.RecordNumber <= last_seen_id:
+                        read = False
+                        break
+
+                    parsed = parse_event(record)
+                    events.append(parsed)
+                    max_seen = max(max_seen, record.RecordNumber)
+            except Exception as e:
+                logger.error(f"Error leyendo log de eventos {log_type}: {e}")
+                read = False
 
         win32evtlog.CloseEventLog(handle)
         return events, max_seen
     
-
+    #iterar sobre todas las fuentes de logs configuradas y recolectar nuevos eventos
     def collect_all(self):
         updated_state = {}
 
@@ -51,23 +60,26 @@ class Collector:
             last_seen = self.state.get_last_seen(log_type)
             events, max_seen = self.collect_from_log(log_type, last_seen)
 
-            logger.info(f"[+] {len(events)} eventos nuevos desde '{log_type}' (last={last_seen} -> {max_seen})")
+            if events:
+                logger.info(f"[+] {len(events)} nuevos eventos de '{log_type}' (último={last_seen} -> {max_seen})")
+                
+                #guardar evento
+                store_path = get_event_store_path(log_type)
+                try:
+                    with open(store_path, "a", encoding="utf-8") as f:
+                        for e in events:
+                            f.write(json.dumps(e) + "\n")
+                except Exception as e:
+                    logger.error(f"Fallo al escribir eventos en {store_path}: {e}")
+
+                #procesar las reglas
+                for e in events:
+                    alerts = self.rule_engine.evaluate(e)
+                    if alerts:
+                        self.alert_manager.save_alerts(alerts)
+                        logger.warning(f"[!] ALERTA generada: {len(alerts)} para evento {e.get('event_id')}")
 
             updated_state[log_type] = max_seen
-
-            if events:
-                if not os.path.exists("data"):
-                    os.makedirs("data")
-
-                with open(f"data/{log_type.lower()}_events.jsonl", "a", encoding="utf-8") as f:
-                    for e in events:
-                        f.write(json.dumps(e) + "\n")
-
-            for e in events:
-                alerts = self.rule_engine.evaluate(e)
-                if alerts:
-                    self.alert_manager.save_alerts(alerts)
-                    logger.warning(f"[!] ALERTA generada: {len(alerts)} en evento {e.get('event_id')}")
 
         self.state.save(updated_state)
 

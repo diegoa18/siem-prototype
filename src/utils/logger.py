@@ -1,12 +1,10 @@
 import logging
-import os
+import sys
+from src.config import LOG_FILE, LOG_DIR
 
-LOG_DIR = "logs"
-LOG_FILE = os.path.join(LOG_DIR, "siem.log")
-
+#configura y retorna el logger de la app
 def setup_logger():
-    if not os.path.exists("SIEM"):
-        os.makedirs(LOG_DIR, exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
 
     logger = logging.getLogger("SIEM")
     logger.setLevel(logging.DEBUG)
@@ -15,22 +13,25 @@ def setup_logger():
     if logger.hasHandlers():
         logger.handlers.clear()
 
-    
     formatter = logging.Formatter(
         "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
     )
 
-    console = logging.StreamHandler()
+    #handler de la consola
+    console = logging.StreamHandler(sys.stdout)
     console.setLevel(logging.INFO)
     console.setFormatter(formatter)
     logger.addHandler(console)
 
-
-    file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
-    file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+    #handler del archivo
+    try:
+        file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+    except Exception as e:
+        print(f"Fallo al configurar log en archivo: {e}")
 
     return logger
 

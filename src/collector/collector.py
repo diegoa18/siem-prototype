@@ -21,14 +21,17 @@ class Collector: #recoleccion de logs de windows
         events = []
         max_seen = last_seen_id
         
-        flags = win32evtlog.EVENTLOG_BACKWARDS_READ | win32evtlog.EVENTLOG_SEQUENTIAL_READ
+        #IMPORTANTE -> leer hacia ADELANTE (viejo -> nuevo) para que las reglas temporales funcionen bien.
+        flags = win32evtlog.EVENTLOG_FORWARDS_READ | win32evtlog.EVENTLOG_SEQUENTIAL_READ
         
         try:
+            #intentar abrir el log
             handle = win32evtlog.OpenEventLog(None, log_type)
         except Exception as e:
             logger.error(f"Fallo al abrir log de eventos {log_type}: {e}")
             return [], last_seen_id
 
+        #bucle de lectura
         read = True
         while read:
             try:
@@ -37,6 +40,7 @@ class Collector: #recoleccion de logs de windows
                     read = False
                     break
 
+                #iterar sobre los eventos leidos
                 for record in records:
                     if record.RecordNumber <= last_seen_id:
                         read = False
@@ -45,6 +49,7 @@ class Collector: #recoleccion de logs de windows
                     parsed = parse_event(record)
                     events.append(parsed)
                     max_seen = max(max_seen, record.RecordNumber)
+            #prevenir loops infinitos
             except Exception as e:
                 logger.error(f"Error leyendo log de eventos {log_type}: {e}")
                 read = False

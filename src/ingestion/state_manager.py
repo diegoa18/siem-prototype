@@ -1,10 +1,10 @@
 import json
 from typing import Dict, Any
-from src.config import STATE_FILE
+from src.config.config import STATE_FILE
 from src.utils.logger import logger
 
 
-#Gestionar estado del colector
+#gestionar estado del colector
 class CollectorState:
     
     def __init__(self):

@@ -1,7 +1,7 @@
 import json
 import os
 from src.utils.file_utils import ensure_dir
-from src.config import ALERT_FILE, DATA_DIR
+from src.config.config import ALERT_FILE, DATA_DIR
 from src.utils.logger import logger
 
 class AlertManager:

@@ -1,4 +1,4 @@
-from src.common.schema import ParsedFields
+from src.normalization.schema import ParsedFields
 
 #EXTRACTOR ESPECIFICO PARA EVENTO 4625 (FALLO DE INICIO DE SESION)
 def extract(record, parsed): #record es el evento, parsed es el diccionario que se va a llenar

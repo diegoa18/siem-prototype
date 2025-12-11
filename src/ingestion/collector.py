@@ -1,11 +1,11 @@
 import win32evtlog
 import json
 from typing import List, Tuple, Dict, Any
-from src.config import get_event_store_path
+from src.config.config import get_event_store_path
 from .state_manager import CollectorState
 from .event_parser import parse_event
-from src.rules.rule_engine import RuleEngine
-from src.alerts.alert_manager import AlertManager
+from src.correlation.rule_engine import RuleEngine
+from src.alerting.alert_manager import AlertManager
 from src.utils.logger import logger
 
 LOG_SOURCES = ["System", "Security"]

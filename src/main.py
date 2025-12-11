@@ -1,3 +1,6 @@
-from src.collector.collector import run_collector
+#import sys
+#import os
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from src.ingestion.collector import run_collector
 
 run_collector()

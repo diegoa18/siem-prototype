@@ -1,10 +1,10 @@
 import yaml
 import glob
 from collections import defaultdict
-from src.common.schema import ParsedFields
-from src.rules.rule_structures import RuleEventBuffer
+from src.normalization.schema import ParsedFields
+from src.correlation.rule_structures import RuleEventBuffer
 from src.utils.logger import logger
-from src.common.taxonomy import RuleCategory, RuleSeverity
+from src.normalization.taxonomy import RuleCategory, RuleSeverity
 
 class RuleEngine:
     def __init__(self):

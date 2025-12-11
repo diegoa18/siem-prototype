@@ -2,7 +2,7 @@ id: "R001"
 name: "Multiple failed logins"
 description: "detecta multiples intentos fallidos de inicio de sesion desde la misma IP (fuerza bruta)"
 severity: "high"
-category: "authentication_failure"
+category: "Credential Access"
 tags:
   - windows
   - security
@@ -14,7 +14,6 @@ condition:
   threshold: 5
   timeframe_seconds: 120
   group_by: source_ip
-
 
 fields:
   - time_generated

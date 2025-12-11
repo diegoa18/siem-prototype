@@ -3,7 +3,7 @@ import time
 from typing import Dict, Any, Optional
 from datetime import datetime
 from src.utils.logger import logger
-from src.common.schema import ParsedFields
+from src.normalization.schema import ParsedFields
 
 _logged_extractors = set() #evitar spam de logs
 
@@ -61,7 +61,7 @@ def parse_event(record: Any) -> Dict[str, Any]:
     }
 
     #extraccion dinamica (si existe un extractor para este ID)
-    module_name = f"src.collector.extractors.windows_{win_id}"
+    module_name = f"src.ingestion.extractors.windows_{win_id}"
     try:
         mod = importlib.import_module(module_name)
         if hasattr(mod, "extract"):

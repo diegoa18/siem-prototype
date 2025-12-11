@@ -1,6 +1,6 @@
 import logging
 import sys
-from src.config import LOG_FILE, LOG_DIR
+from src.config.config import LOG_FILE, LOG_DIR
 
 #CONFIGURACION DE LOGGER
 def setup_logger(name="SIEM", log_level=logging.DEBUG):
